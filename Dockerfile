@@ -1,18 +1,31 @@
-FROM java:8-jdk
+FROM java:latest
+MAINTAINER Mizunashi Mana <mizunashi_mana@mma.club.uec.ac.jp>
 
-MAINTAINER Carlos Sanchez <carlos@apache.org>
+RUN apt-get update \
+ && apt-get install -y sudo curl \
+ && rm -rf /var/lib/apt/lists/*
 
-ENV JENKINS_SWARM_VERSION 1.22
-ENV HOME /home/jenkins-slave
+ENV JENKINS_WORKUSER="jenkins" \
+    JENKINS_WORKSPACE="/var/jenkins_ws" \
+    SETUP_DIR="/var/cache/jenkins_ws"
 
-RUN useradd -c "Jenkins Slave user" -d $HOME -m jenkins-slave
-RUN curl --create-dirs -sSLo /usr/share/jenkins/swarm-client-$JENKINS_SWARM_VERSION-jar-with-dependencies.jar http://maven.jenkins-ci.org/content/repositories/releases/org/jenkins-ci/plugins/swarm-client/$JENKINS_SWARM_VERSION/swarm-client-$JENKINS_SWARM_VERSION-jar-with-dependencies.jar \
-  && chmod 755 /usr/share/jenkins
+ENV JENKINS_SWARM_VERSION=1.24
 
-COPY jenkins-slave.sh /usr/local/bin/jenkins-slave.sh
+RUN useradd -c "Jenkins Slave user" -d "${JENKINS_WORKSPACE}" \
+  -u 1000 -m -s /bin/bash ${JENKINS_WORKUSER}
 
-USER jenkins-slave
+RUN mkdir -p ${SETUP_DIR}
+RUN curl -fL http://maven.jenkins-ci.org/content/repositories/releases/org/jenkins-ci/plugins/swarm-client/${JENKINS_SWARM_VERSION}/swarm-client-${JENKINS_SWARM_VERSION}-jar-with-dependencies.jar \
+  -o ${SETUP_DIR}/swarm-client-${JENKINS_SWARM_VERSION}-jar-with-dependencies.jar
+RUN curl -fL http://maven.jenkins-ci.org/content/repositories/releases/org/jenkins-ci/plugins/swarm-client/${JENKINS_SWARM_VERSION}/swarm-client-${JENKINS_SWARM_VERSION}-jar-with-dependencies.jar.sha1 \
+  -o ${SETUP_DIR}/swarm-client-${JENKINS_SWARM_VERSION}-jar-with-dependencies.jar.sha1 \
+  && echo "`cat ${SETUP_DIR}/swarm-client-${JENKINS_SWARM_VERSION}-jar-with-dependencies.jar.sha1` ${SETUP_DIR}/swarm-client-${JENKINS_SWARM_VERSION}-jar-with-dependencies.jar" | sha1sum -c -
+RUN chmod 755 ${SETUP_DIR}
 
-VOLUME /home/jenkins-slave
+COPY entrypoint.sh /sbin/entrypoint.sh
+RUN chmod 755 /sbin/entrypoint.sh
 
-ENTRYPOINT ["/usr/local/bin/jenkins-slave.sh"]
+VOLUME ["${JENKINS_WORKSPACE}"]
+WORKDIR ${JENKINS_WORKSPACE}
+
+ENTRYPOINT ["/sbin/entrypoint.sh"]
