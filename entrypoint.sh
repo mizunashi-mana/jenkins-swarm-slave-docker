@@ -1,22 +1,21 @@
 #!/bin/bash
 set -e
 
-if [[ $# -lt 1 ]] || [[ "$1" == "-"* ]]; then
-    SWARM_CLIENT_JAR=`ls -1 ${SETUP_DIR}/swarm-client-*.jar | tail -n 1`
+SWARM_CLIENT_JAR=${SETUP_DIR}/swarm-client-${JENKINS_SWARM_VERSION}-jar-with-dependencies.jar
 
-    if [[ "$@" != *"-master "* ]] && [ ! -z "$JENKINS_PORT_8080_TCP_ADDR" ]; then
-        PARAMS="-master http://$JENKINS_PORT_8080_TCP_ADDR:$JENKINS_PORT_8080_TCP_PORT"
-    fi
-
-    echo Running java ${JAVA_OPTS} -jar ${SWARM_CLIENT_JAR} -fsroot ${JENKINS_WORKSPACE} ${PARAMS} "$@"
-
-    set -x
-    exec start-stop-daemon --start \
-      --exec /usr/bin/java -- \
-      ${JAVA_OPTS:- ${JAVA_OPTS}} \
-      -jar ${SWARM_CLIENT_JAR} \
-      -fsroot ${JENKINS_WORKSPACE} \
-      ${PARAMS:- ${PARAMS}} "$@"
+if [[ -z "${JENKINS_MASTER}" ]] && [ -n "${JENKINS_PORT_8080_TCP_ADDR}" ]; then
+  JENKINS_MASTER="http://${JENKINS_PORT_8080_TCP_ADDR}:${JENKINS_PORT_8080_TCP_PORT}"
 fi
 
-exec "$@"
+set -x
+exec start-stop-daemon --start \
+  --exec /usr/bin/java -- \
+  ${JAVA_OPTS:- ${JAVA_OPTS}} \
+  -jar ${SWARM_CLIENT_JAR} \
+  -fsroot ${JENKINS_WORKSPACE} \
+  ${JENKINS_MASTER:+-master ${JENKINS_MASTER}} \
+  ${JENKINS_USERNAME:+-username ${JENKINS_USERNAME}} \
+  ${JENKINS_PASSWORD:+-password ${JENKINS_PASSWORD}} \
+  ${JENKINS_NAME:+-name ${JENKINS_NAME}} \
+  ${JENKINS_EXECUTORS:+-executors ${JENKINS_EXECUTORS}}
+

@@ -25,6 +25,7 @@ RUN chmod 755 ${SETUP_DIR}
 COPY entrypoint.sh /sbin/entrypoint.sh
 RUN chmod 755 /sbin/entrypoint.sh
 
+USER ${JENKINS_WORKUSER}
 VOLUME ["${JENKINS_WORKSPACE}"]
 WORKDIR ${JENKINS_WORKSPACE}
 
