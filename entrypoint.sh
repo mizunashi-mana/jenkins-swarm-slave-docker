@@ -17,5 +17,5 @@ exec start-stop-daemon --start \
   ${JENKINS_USERNAME:+-username ${JENKINS_USERNAME}} \
   ${JENKINS_PASSWORD:+-password ${JENKINS_PASSWORD}} \
   ${JENKINS_NAME:+-name ${JENKINS_NAME}} \
-  ${JENKINS_EXECUTORS:+-executors ${JENKINS_EXECUTORS}}
-
+  ${JENKINS_EXECUTORS:+-executors ${JENKINS_EXECUTORS}} \
+  ${JENKINS_LABELS:+-labels "${JENKINS_LABELS}"}

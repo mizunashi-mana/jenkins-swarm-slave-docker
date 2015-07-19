@@ -1,4 +1,4 @@
 all: build
 
 build:
-	@docker build --tag=lekeplass/jenkins-swarm-slave .
+	@docker build --tag=${USER}/jenkins-swarm-slave .
